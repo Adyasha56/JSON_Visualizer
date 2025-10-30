@@ -77,12 +77,9 @@ It automatically parses and validates JSON, then renders a **node-based tree gra
 
 ### Application Flow
 
-```
+
 ![JSON Visualization Process](https://raw.githubusercontent.com/Adyasha56/JSON_Visualizer/main/src/assets/json-tree-visualization.png)
 
-
-
-```
 
 ### Data Flow
 
