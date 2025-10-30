@@ -78,7 +78,8 @@ It automatically parses and validates JSON, then renders a **node-based tree gra
 ### Application Flow
 
 ```
-![JSON Visualization Process](./assets/json-tree-visualization.png)
+![JSON Visualization Process](./src/assets/json-tree-visualization.png)
+
 
 ```
 
@@ -261,6 +262,4 @@ $.address.city        → nested object property
 * **Tailwind CSS** for sleek styling
 * **Lucide React** for icons
 
----
 
-Would you like me to make a **shorter version** (for GitHub description section, 4–5 lines) that matches this README’s tone too? It’ll look clean right below your repo name.
