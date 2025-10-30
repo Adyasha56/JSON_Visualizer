@@ -9,8 +9,8 @@ export const buildTree = (data) => {
   const traverse = (obj, currentPath, parent, currentLevel) => {
     const id = `node-${nodeId++}`;
     const position = {
-      x: nodeId * 250,
-      y: currentLevel * 120,
+      x: 0, // Will be calculated by layout algorithm
+      y: currentLevel * 150, // Increased vertical spacing
     };
 
     if (obj === null) {
@@ -86,22 +86,23 @@ export const buildTree = (data) => {
         markerEnd: {
           type: MarkerType.ArrowClosed,
         },
-        style: { stroke: '#94a3b8' },
+        style: { stroke: '#94a3b8', strokeWidth: 2 },
       });
     }
   };
 
   traverse(data, '$', null, 0);
 
-  // Layout nodes properly
-  const layoutNodes = layoutTree(nodes, edges);
+  // Improved layout algorithm
+  const layoutNodes = improvedLayout(nodes, edges);
   return { nodes: layoutNodes, edges };
 };
 
-// Simple tree layout algo
-const layoutTree = (nodes, edges) => {
+// Improved tree layout algorithm with better spacing
+const improvedLayout = (nodes, edges) => {
   const nodeMap = new Map(nodes.map(n => [n.id, { ...n, children: [] }]));
   
+  // Build parent-child relationships
   edges.forEach(edge => {
     const parent = nodeMap.get(edge.source);
     if (parent) {
@@ -109,32 +110,61 @@ const layoutTree = (nodes, edges) => {
     }
   });
 
-  const calculatePosition = (nodeId, x = 0, y = 0, visited = new Set()) => {
-    if (visited.has(nodeId)) return x;
+  // Group nodes by level
+  const levelMap = new Map();
+  nodes.forEach(node => {
+    const level = node.position.y;
+    if (!levelMap.has(level)) {
+      levelMap.set(level, []);
+    }
+    levelMap.get(level).push(node.id);
+  });
+
+  const NODE_WIDTH = 200; // Increased horizontal spacing
+  const HORIZONTAL_SPACING = 80; // Gap between sibling nodes
+  
+  // Calculate positions level by level
+  const calculatePosition = (nodeId, offsetX = 0, visited = new Set()) => {
+    if (visited.has(nodeId)) return offsetX;
     visited.add(nodeId);
 
     const node = nodeMap.get(nodeId);
-    if (!node) return x;
+    if (!node) return offsetX;
 
-    node.position = { x, y };
-
-    let currentX = x;
-    node.children.forEach((childId) => {
-      currentX = calculatePosition(childId, currentX, y + 120, visited);
-      currentX += 250;
-    });
-
-    if (node.children.length > 0) {
-      const firstChild = nodeMap.get(node.children[0]);
-      const lastChild = nodeMap.get(node.children[node.children.length - 1]);
-      node.position.x = (firstChild.position.x + lastChild.position.x) / 2;
+    if (node.children.length === 0) {
+      // Leaf node
+      node.position.x = offsetX;
+      return offsetX + NODE_WIDTH + HORIZONTAL_SPACING;
     }
 
-    return node.position.x;
+    // Calculate children positions first
+    let childX = offsetX;
+    const childPositions = [];
+    
+    node.children.forEach(childId => {
+      const startX = childX;
+      childX = calculatePosition(childId, childX, visited);
+      const childNode = nodeMap.get(childId);
+      childPositions.push(childNode.position.x);
+    });
+
+    // Center parent over children
+    if (childPositions.length > 0) {
+      const minChildX = Math.min(...childPositions);
+      const maxChildX = Math.max(...childPositions);
+      node.position.x = (minChildX + maxChildX) / 2;
+    }
+
+    return childX;
   };
 
+  // Find root nodes (nodes with no incoming edges)
   const roots = nodes.filter(n => !edges.some(e => e.target === n.id));
-  roots.forEach(root => calculatePosition(root.id));
+  
+  let globalX = 0;
+  roots.forEach(root => {
+    globalX = calculatePosition(root.id, globalX, new Set());
+  });
 
   return Array.from(nodeMap.values());
 };
